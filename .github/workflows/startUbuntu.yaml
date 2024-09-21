@@ -6,15 +6,12 @@ jobs:
   run-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up SSH
+      - name: Removing older version of docker from machine
         run: |
-          sudo apt-get update
-          sudo apt-get upgrade -y
           for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
-
+      - name: Adding Docker's official GPG key
+        run: |
           # Add Docker's official GPG key:
-          sudo apt-get update
-          sudo apt-get install ca-certificates curl xubuntu-desktop nano
           sudo install -m 0755 -d /etc/apt/keyrings
           sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -25,15 +22,34 @@ jobs:
             $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
             sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
+      - name: Update and upgrade APT
+        run: |
           sudo apt-get update
+          sudo apt-get upgrade -y
+
+      - name: Install ca-certificates, curl and nano
+        run: |
+          sudo apt-get install ca-certificates curl nano
+
+      - name: Install docker
+        run: |
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+      - name: Set up SSH
+        run: |
           echo "root:${{ secrets.ROOT_PASSWORD }}" | sudo chpasswd
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo service ssh restart
 
+      - name: Install xubuntu-desktop
+        run: |
+          sudo apt-get install xubuntu-desktop
+          
       - name: Install RustDesk
         run: |
-          sudo apt install rustdesk
+          wget https://raw.githubusercontent.com/techahold/rustdeskinstall/master/install.sh
+          chmod +x install.sh
+          ./install.sh
 
       - name: Start RustDesk and Get ID
         run: |
