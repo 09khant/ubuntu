@@ -7,18 +7,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Run Python script
-      run: |
-        # Create the Python script
-        touch python_script.py
-        echo "import time
-    
-        while True:
-            print('Python script executed')
-            time.sleep(60)" > python_script.py
-    
-        # Run the script and capture its output
-        output=$(python3 python_script.py)
-    
-        # Print the output to the console
-        echo "$output"
+      - name: Set up SSH
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          sudo apt-get install curl nano
+          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          sudo service ssh restart
+          echo "root:${{ secrets.ROOT_PASSWORD }}" | sudo chpasswd
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo service ssh restart
+
+      - name: Update No-IP DDNS
+        env:
+          NOIP_USERNAME: ${{ secrets.NOIP_USERNAME }}
+          NOIP_PASSWORD: ${{ secrets.NOIP_PASSWORD }}
+          HOSTNAME: ${{ secrets.NOIP_HOSTNAME }}
+        run: |
+          IP=$(curl -s ifconfig.me)
+          curl -u "$NOIP_USERNAME:$NOIP_PASSWORD" "http://dynupdate.no-ip.com/nic/update?hostname=$HOSTNAME&myip=$IP"
+
+      - name: Run Shadowsocks Docker Container
+        run: |
+          sudo docker run -e PASSWORD=khantmgmg1412 -p 6187:8388 -p 6187:8388/udp -d shadowsocks/shadowsocks-libev
+
+      - name: Display SSH access information
+        run: |
+          echo "SSH into the server using the following command:"
+          echo "ssh root@${{ secrets.NOIP_HOSTNAME }} -p 22"
+          echo "Connect to Shadowsocks using: ss://$(echo -n "aes-256-gcm:${{ secrets.ROOT_PASSWORD }}@${{ secrets.NOIP_HOSTNAME }}:6187" | base64)"
+
+      - name: Run Python script
+        run: |
+          # Create the Python script
+          touch python_script.py
+          echo "import time
+      
+          while True:
+              print('Python script executed')
+              time.sleep(60)" > python_script.py
+      
+          # Run the script and capture its output
+          output=$(python3 python_script.py)
+      
+          # Print the output to the console
+          echo "$output"
