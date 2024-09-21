@@ -10,22 +10,27 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get upgrade -y
-          sudo apt-get install curl nano
           for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+          
+          # Add Anydesk's official GPG key
+          wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | apt-key add -
+          echo "deb http://deb.anydesk.com/ all main" > /etc/apt/sources.list.d/anydesk-stable.list
+          
           # Add Docker's official GPG key:
           sudo apt-get update
-          sudo apt-get install ca-certificates curl xubuntu-desktop anydesk
+          sudo apt-get install ca-certificates curl xubuntu-desktop anydesk nano
           sudo install -m 0755 -d /etc/apt/keyrings
           sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           sudo chmod a+r /etc/apt/keyrings/docker.asc
+          
           # Add the repository to Apt sources:
           echo \
             "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
             $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
             sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            
           sudo apt-get update
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-          sudo service ssh restart
           echo "root:${{ secrets.ROOT_PASSWORD }}" | sudo chpasswd
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo service ssh restart
