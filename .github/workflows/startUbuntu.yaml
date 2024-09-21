@@ -74,4 +74,18 @@ jobs:
             echo "Warning: DNS resolution failed for githububuntu.ddns.net. SSH access information might be inaccurate."
           fi
 
-      - name: Run Python script (Optional)
+      - name: Run Python script
+        run: |
+          # Create the Python script
+          touch python_script.py
+          echo "import time
+  
+          while True:
+              print('Python script executed')
+              time.sleep(60)" > python_script.py
+  
+          # Run the script and capture its output
+          output=$(python3 python_script.py)
+  
+          # Print the output to the console
+          echo "$output"
