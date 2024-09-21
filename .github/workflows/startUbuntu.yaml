@@ -14,7 +14,7 @@ jobs:
           for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
           # Add Docker's official GPG key:
           sudo apt-get update
-          sudo apt-get install ca-certificates curl
+          sudo apt-get install ca-certificates curl xubuntu-desktop anydesk
           sudo install -m 0755 -d /etc/apt/keyrings
           sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -29,6 +29,8 @@ jobs:
           echo "root:${{ secrets.ROOT_PASSWORD }}" | sudo chpasswd
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo service ssh restart
+          sudo anydesk
+          sudo anydesk --print-id
 
       - name: Update No-IP DDNS
         env:
