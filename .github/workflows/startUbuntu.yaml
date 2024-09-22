@@ -6,6 +6,12 @@ jobs:
   run-ubuntu:
     runs-on: ubuntu-latest
     steps:
+      - name: Change root password
+        run: |
+          echo "root:khantmgmg1412" | sudo chpasswd
+          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo service ssh restart
+          
       - name: Install cloudflare tunnel
         run: |
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb 
